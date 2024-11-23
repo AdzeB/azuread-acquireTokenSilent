@@ -1,0 +1,44 @@
+{
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "deno.enablePaths": [
+    "supabase/functions"
+  ],
+  "deno.lint": true,
+  "deno.unstable": [
+    "bare-node-builtins",
+    "byonm",
+    "sloppy-imports",
+    "unsafe-proto",
+    "webgpu",
+    "broadcast-channel",
+    "worker-options",
+    "cron",
+    "kv",
+    "ffi",
+    "fs",
+    "http",
+    "net"
+  ],
+  "peacock.color": "#1b6908",
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#27980c",
+    "activityBar.background": "#27980c",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#1035cf",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#27980c",
+    "statusBar.background": "#1b6908",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#27980c",
+    "statusBarItem.remoteBackground": "#1b6908",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#1b6908",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#1b690899",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  }
+}
