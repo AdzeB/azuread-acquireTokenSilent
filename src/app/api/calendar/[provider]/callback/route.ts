@@ -61,13 +61,13 @@ export async function GET(
   if (error) {
     logger("Error in OAuth flow:", `${error}, ${error_description}`);
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=${error}&error_description=${error_description}`,
+      `${baseUrl}?error=${error}&error_description=${error_description}`,
     );
   }
 
   if (!code) {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=authorization-code-not-found`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=authorization-code-not-found`,
     );
   }
 
@@ -76,7 +76,7 @@ export async function GET(
   const calendarType = providerToCalendarType[provider];
   if (!calendarType) {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=unsupported-calendar-provider-${provider}`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=unsupported-calendar-provider-${provider}`,
     );
   }
 
@@ -87,7 +87,7 @@ export async function GET(
   const user = userData.data;
   if (!user) {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=user-not-found`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=user-not-found`,
     );
   }
 
@@ -148,18 +148,18 @@ export async function GET(
       // Handle the token acquisition error
       logger("Error acquiring token for Outlook:", error);
       return NextResponse.redirect(
-        `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=failed-to-connect-to-calendar-provider`,
+        `${baseUrl}?error=calendar-connection-failed&error_description=failed-to-connect-to-calendar-provider`,
       );
     }
   } else {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=unsupported-calendar-provider-${calendarType}`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=unsupported-calendar-provider-${calendarType}`,
     );
   }
 
   if (!tokenData) {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=token-data-not-found`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=token-data-not-found`,
     );
   }
 
@@ -195,7 +195,7 @@ export async function GET(
   if (userInsertCalendarError) {
     logger("Error inserting user calendar:", error);
     return NextResponse.redirect(
-      `${env.NEXT_PUBLIC_APP_URL}/en/sync-calendar?error=calendar-connection-failed&error_description=${userInsertCalendarError.message}`,
+      `${env.NEXT_PUBLIC_APP_URL}/en?error=calendar-connection-failed&error_description=${userInsertCalendarError.message}`,
     );
   }
 
@@ -209,7 +209,7 @@ export async function GET(
   if (userUpdateError) {
     logger("Error updating auth user:", userUpdateError);
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=calendar-connection-failed&error_description=${userUpdateError?.message}`,
+      `${baseUrl}?error=calendar-connection-failed&error_description=${userUpdateError?.message}`,
     );
   }
 

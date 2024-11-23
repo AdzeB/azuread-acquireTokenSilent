@@ -7,9 +7,9 @@ export default function CalendarConnectedPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to test-calendar after 3 seconds
+    // Redirect to main page after 3 seconds
     const timeout = setTimeout(() => {
-      router.push("/test-calendar");
+      router.push("/");
     }, 3000);
 
     return () => clearTimeout(timeout);

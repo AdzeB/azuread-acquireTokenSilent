@@ -11,6 +11,16 @@ import { CalendarTokenData } from "../callback/route";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/utils/supabase/types";
 
+// Helper function to return error response
+const errorResponse = (message: string, status = 400) => {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { provider: string } },
@@ -20,66 +30,60 @@ export async function GET(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
   const requestUrl = new URL(request.url);
-  const { provider } = params;
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-
-  const redirectUri = getRedirectUri(provider);
 
   const userData = await supabase.from("users").select("*").limit(1).single();
 
   const user = userData.data;
 
   if (!user) {
-    return NextResponse.redirect(
-      `${requestUrl.origin}/test-calendar?error=calendar-connection-failed&error_description=user-not-found`,
-    );
+    return errorResponse("User not found", 404);
   }
 
   // Test AcquireToken Silent
   // Fetch the current user_calendars entry
-  const { data: calendarData, error } = await supabase
+  const { data: calendarData, error: calendarError } = await supabase
     .from("user_calendars")
     .select("*")
     .eq("user_id", user.id)
     .eq("calendar_type", "outlook")
     .single();
 
-  if (error) {
-    return NextResponse.redirect(
-      `${requestUrl.origin}/test-calendar?error=calendar-connection-failed&error_description=user-not-found`,
-    );
+  if (calendarError || !calendarData) {
+    return errorResponse("Calendar not found", 404);
   }
 
+  console.log("Calendar Data:", calendarData);
+
   const msalTokenCache = getMsalClient(supabase, user.id).getTokenCache();
+
+  console.log("Token Cache:", msalTokenCache);
 
   const account = await msalTokenCache.getAccountByHomeId(
     calendarData.outlook_details?.account_id ?? "",
   );
 
+  console.log("Account:", account);
+
   if (!account) {
     return NextResponse.redirect(
-      `${requestUrl.origin}/test-calendar?error=calendar-connection-failed&error_description=account-not-found`,
+      `${requestUrl.origin}?error=calendar-connection-failed&error_description=account-not-found`,
     );
   }
 
-  const { data: testData, error: testError } = await supabase
+  // 3. Get MSAL cache data
+  const { data: msalCacheData, error: msalCacheError } = await supabase
     .from("msal_cache")
     .select("*")
     .eq("user_id", user.id)
     .single();
 
-  try {
-    // const response = await getMsalClient(supabase, user.id).acquireTokenSilent(
-    //   {
-    //     account: account,
-    //     scopes: calendarData.scopes ?? [],
-    //     forceRefresh: true,
-    //   },
-    // );
+  if (msalCacheError || !msalCacheData?.cache_data) {
+    return errorResponse("MSAL cache not found", 404);
+  }
 
+  try {
     const response = await getMsalClient(supabase, user.id).acquireTokenSilent({
-      account: JSON.parse(testData?.cache_data as string) as AccountInfo,
+      account: JSON.parse(msalCacheData?.cache_data as string) as AccountInfo,
       scopes: calendarData.scopes ?? [],
       forceRefresh: true,
     });
@@ -139,17 +143,31 @@ export async function GET(
       });
 
     if (userInsertCalendarError) {
-      console.error("Error inserting user calendar silently:", error);
-      return NextResponse.redirect(
-        `${requestUrl.origin}/test-calendar?error=calendar-connection-failed&error_description=${userInsertCalendarError.message}`,
+      console.error(
+        "Error inserting user calendar silently:",
+        userInsertCalendarError,
+      );
+      return errorResponse(
+        userInsertCalendarError.message,
+        500,
       );
     }
 
-    return NextResponse.redirect(`${requestUrl.origin}/calendar-connected`);
+    console.log("User Calendar Inserted Successfully");
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
-    console.log("Error silently:", error);
-    return NextResponse.redirect(
-      `${requestUrl.origin}/test-calendar?error=calendar-connection-failed&error_description=failed-to-acquire-token-silently`,
+    console.error("Silent refresh error:", error);
+    return errorResponse(
+      error instanceof Error
+        ? error.message
+        : "Failed to refresh token silently",
+      400,
     );
   }
 }

@@ -18,18 +18,27 @@ export async function GET(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .limit(1)
+    .single();
 
   if (!user) {
     return NextResponse.redirect(
-      `${baseUrl}/sync-calendar?error=user_not_found&error_description=could_not_find_user`,
+      `${baseUrl}?error=user_not_found&error_description=could_not_find_user`,
     );
   }
 
   const authUrl = await getAuthUrl(supabase, user.id, provider);
-  return NextResponse.redirect(authUrl);
+  // return NextResponse.redirect(authUrl);
+  return new Response(authUrl, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain",
+    },
+  });
 }
 
 async function getAuthUrl(
@@ -60,6 +69,9 @@ async function getAuthUrl(
       const authUrl = await getMsalClient(supabase, userId).getAuthCodeUrl(
         authCodeUrlParameters,
       );
+
+      console.log("Auth URL", authUrl);
+
       return authUrl;
     default:
       throw new Error(`Unsupported provider: ${provider}`);

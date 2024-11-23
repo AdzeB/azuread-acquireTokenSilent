@@ -26,9 +26,11 @@ export default function TestCalendarPage() {
   }, []);
 
   const fetchCalendarStatus = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .limit(1)
+      .single();
     if (!user) return;
 
     const { data, error } = await supabase
@@ -46,13 +48,24 @@ export default function TestCalendarPage() {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/calendar/outlook/initiate");
+      const response = await fetch("/api/calendar/outlook/initiate", {
+        redirect: "follow",
+      });
+
+      console.log("Response", response);
       if (!response.ok)
         throw new Error("Failed to initiate calendar connection");
 
-      const data = await response.text();
-      window.location.href = data;
+      const authUrl = await response.text();
+      console.log("Auth URL received:", authUrl);
+
+      // Validate the URL before redirecting
+      if (!authUrl.startsWith("http")) {
+        throw new Error("Invalid authentication URL received");
+      }
+      window.location.assign(authUrl);
     } catch (err) {
+      console.log("Error", err);
       setError(
         err instanceof Error ? err.message : "Failed to connect calendar"
       );
